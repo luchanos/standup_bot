@@ -1,8 +1,11 @@
 from telebot import TeleBot
 import json
 from datetime import date
+from envparse import Env
 
-TOKEN = "5200212331:AAHYPoA56yoKQ9Gf0lQuaxUoo3FtXdIY7qg"
+env = Env()
+
+TOKEN = env.str("TOKEN")
 
 bot = TeleBot(TOKEN)
 
