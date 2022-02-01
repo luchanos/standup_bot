@@ -5,7 +5,7 @@ from envparse import env
 
 TOKEN = env.str("TOKEN", default="")
 ADMIN_CHAT_ID = 362857450
-FILE_PATH = ""
+FILE_PATH = "standup_log.json"
 
 with open(FILE_PATH, "r") as f_o:
     data_from_json = json.load(f_o)

@@ -10,7 +10,7 @@ TOKEN = env.str("TOKEN")
 
 bot = TeleBot(TOKEN)
 ADMIN_CHAT_ID = 362857450
-FILE_PATH = ""
+FILE_PATH = "standup_log.json"
 
 
 def standup_speech(message):
