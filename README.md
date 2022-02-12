@@ -31,3 +31,5 @@ kill -s SIGTERM 16680
 
 Чтобы выдавать права:
 chmod +x /etc/supervisor/telegram_bot.sh
+
+Полезная статья по деплою с supervisor - https://www.sinyawskiy.ru/telegramdeploy.html
