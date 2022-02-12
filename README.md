@@ -1,6 +1,14 @@
 # standup_bot
 ### set crontab
 * * * * * source /Users/nnsviridov/PycharmProjects/AcademicProjects/standup_bot/venv/bin/activate && python /Users/nnsviridov/PycharmProjects/AcademicProjects/standup_bot/cron_reminder.py
+* * * * * . /home/nnsviridov/.pyenv/versions/standup_bot/bin/activate && python /home/nnsviridov/PythonProjects/standup_bot/cron_reminder.py
+* * * * * . /home/nnsviridov/.pyenv/versions/standup_bot/bin/activate && python /home/nnsviridov/PythonProjects/standup_bot/cron_reminder.py >> /home/nnsviridov/PythonProjects/standup_bot/cron_logs.log 1>&1
+
+Логи крона:
+sudo grep CRON /var/log/syslog
+
+Если хотим активировать виртуальное окружение на убунте, то source заменяем на точку.
+
 ### Сборка образа из докерфайла и его публикация
 docker build -t luchanos/standup_bot:1.0.0 . - собираем (не забываем точку в конце)
 docker push luchanos/standup_bot:1.0.0 - пушим в репозиторий
@@ -20,3 +28,6 @@ ps -ef | grep supervisord
 
 Чтобы убивать процессы:
 kill -s SIGTERM 16680
+
+Чтобы выдавать права:
+chmod +x /etc/supervisor/telegram_bot.sh
