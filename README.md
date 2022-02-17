@@ -33,3 +33,8 @@ kill -s SIGTERM 16680
 chmod +x /etc/supervisor/telegram_bot.sh
 
 Полезная статья по деплою с supervisor - https://www.sinyawskiy.ru/telegramdeploy.html
+
+# todo
+Сделать пиналку по определённой теме. Список дел, которые ещё не закрыты.
+Сделать пиналку по времени.
+Сделать кнопку start / stop для времени.
