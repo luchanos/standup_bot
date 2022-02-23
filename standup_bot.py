@@ -1,106 +1,59 @@
-from telebot import TeleBot
+from dataclasses import asdict
+
+from clients import TelegramSupportClient, StandupTelegramBot
+from decorators import user_checker
+from models import UserData
+from settings import TELEGRAM_SERVICE_BASE_URL, TOKEN, ADMIN_CHAT_ID, DATA_FILE_PATH
 import json
-from datetime import date, datetime
-from envparse import Env
-import requests
+from datetime import date
 
-env = Env()
-
-TOKEN = env.str("TOKEN")
-
-bot = TeleBot(TOKEN)
-ADMIN_CHAT_ID = 362857450
-FILE_PATH = "standup_log.json"
+telegram_support_client = TelegramSupportClient(base_url=TELEGRAM_SERVICE_BASE_URL,
+                                                token=TOKEN,
+                                                admin_chat_id=ADMIN_CHAT_ID)
+bot = StandupTelegramBot(TOKEN, telegram_support_client)
 
 
-def user_checker(func):
-    def inner(message):
-        with open(FILE_PATH, "r") as f_o:
-            data_from_json = json.load(f_o)
-        user_id = str(message.from_user.id)
-        if user_id not in data_from_json:
-            bot.reply_to(message, text="Я вас ещё не знаю. Введите команду /start")
-            return
-        return func(message)
-    return inner
+def get_actual_data() -> dict:
+    with open(DATA_FILE_PATH, "r") as f_o:
+        data_from_json = json.load(f_o)
+    return data_from_json
+
+
+def refresh_actual_data(actual_data: dict) -> None:
+    with open(DATA_FILE_PATH, "w") as f_o:
+        json.dump(actual_data, f_o, indent=4, ensure_ascii=False)
 
 
 def standup_speech(message):
-    with open(FILE_PATH, "r") as f_o:
-        data_from_json = json.load(f_o)
-
+    actual_data = get_actual_data()
     user_id = str(message.from_user.id)
-    data_from_json[user_id]["last_updated_dt"] = str(date.today())
-
-    with open(FILE_PATH, "w") as f_o:
-        json.dump(data_from_json, f_o, indent=4, ensure_ascii=False)
-
+    actual_data[user_id]["last_updated_dt"] = str(date.today())
+    refresh_actual_data(actual_data)
     bot.reply_to(message, text="Отлично! Хорошего дня!")
-
-    msg_to_admin = f"Пользователь @{data_from_json[user_id]['username']} говорит: {message.text}"
+    msg_to_admin = f"Пользователь @{actual_data[user_id]['username']} говорит: {message.text}"
     bot.send_message(ADMIN_CHAT_ID, text=msg_to_admin)
 
 
 @bot.message_handler(commands=["standup_speech"])
-@user_checker
+@user_checker(bot)
 def standuper(message):
     bot.reply_to(message, text="Чем занимался вчера? Чем будешь заниматься сегодня? Есть ли какие-нибудь трудности?")
     bot.register_next_step_handler(message, standup_speech)
 
 
-@bot.message_handler(commands=["time_start"])
-@user_checker
-def time_checker_start(message):
-    chat_id = str(message.chat.id)
-    with open(FILE_PATH, "r") as f_o:
-        data_from_json = json.load(f_o)
-    data_from_json[chat_id].setdefault("start_time", str(datetime.now()))
-    with open(FILE_PATH, "w") as f_o:
-        json.dump(data_from_json, f_o, indent=4, ensure_ascii=False)
-
-
-@bot.message_handler(commands=["time_finish"])
-@user_checker
-def time_checker_start(message):
-    chat_id = str(message.chat.id)
-    with open(FILE_PATH, "r") as f_o:
-        data_from_json = json.load(f_o)
-    if "start_time" not in data_from_json[chat_id]:
-        bot.reply_to(message, "Вы не засекли время старта!")
-        return
-    start_time = datetime.strptime(data_from_json[chat_id]["start_time"], "%Y-%m-%d %H:%M:%S.%f")
-    finish_time = datetime.now()
-    data_from_json[chat_id].setdefault("finish_time", str(finish_time))
-    delta = finish_time - start_time
-    bot.reply_to(message, f"Сегодня вы прозанимались: {str(delta)}")
-    with open(FILE_PATH, "w") as f_o:
-        json.dump(data_from_json, f_o, indent=4, ensure_ascii=False)
-
-
 @bot.message_handler(commands=["start"])
 def start(message):
+    """
+    Проверяем, зарегистрирован ли пользователь в нашей системе.
+    Если да - приветствуем его. Если нет - регистрируем и привествуем.
+    """
     user_id = message.from_user.id
-    chat_id = message.chat.id
-    username = message.chat.username
-    with open(FILE_PATH, "r") as f_o:
-        data_from_json = json.load(f_o)
-    if str(user_id) not in data_from_json:
-        data_from_json[user_id] = {
-            "last_updated_dt": None,
-            "chat_id": chat_id,
-            "username": username
-        }
-        with open(FILE_PATH, "w") as f_o:
-            json.dump(data_from_json, f_o, indent=4, ensure_ascii=False)
-        bot.reply_to(message, text="Добро пожаловать!")
+    actual_data = get_actual_data()
+    if str(user_id) not in actual_data:
+        user_data = UserData(chat_id=message.chat.id,
+                             username=message.chat.username)
+        actual_data[user_id] = asdict(user_data)
+        refresh_actual_data(actual_data)
+        bot.reply_to(message, text="Добро пожаловать! Регистрация прошла успешно!")
     else:
-        bot.reply_to(message, text="И снова здравствуйте!")
-
-
-while True:
-    try:
-        print("Завожу бота")
-        bot.polling()
-    except Exception as err:
-        requests.get(f"https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={ADMIN_CHAT_ID}&text=Произошла ошибка: {err})")
-        print("Перезавожу бота", err)
+        bot.reply_to(message, text="И снова здравствуйте! Вы уже зарегистрированы!")
