@@ -22,17 +22,32 @@ RUN apt-get update && apt-get -y install sudo
 
 # Как деплоить бота?
 
+Есть такая штука, как supervisor.
+У него есть файл конфигурации: supervisord.conf
+
 Для запуска бота в фоновом режиме:
 supervisor, который мы ставим в venv и потом после активации можем пользоваться.
 
+Похоже что надо сначала написать команду supervisord.
+
 Чтобы искать процессы:
 ps -ef | grep supervisord
+ps -ef | grep standup_bot
 
 Чтобы убивать процессы:
 kill -s SIGTERM 16680
 
+Чтобы убить процесс с моим ботом, надо отыскать его как исполняемый файл:
+ps -ef | grep <имя запускаемого скрипта>
+
 Чтобы выдавать права:
 chmod +x /etc/supervisor/telegram_bot.sh
+
+Чтобы запустить бота:
+supervisorctl start standup_bot
+
+Чтобы остановить бота:
+supervisorctl stop standup_bot
 
 Полезная статья по деплою с supervisor - https://www.sinyawskiy.ru/telegramdeploy.html
 
