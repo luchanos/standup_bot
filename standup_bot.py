@@ -1,3 +1,4 @@
+import datetime
 from dataclasses import asdict
 
 from clients import TelegramSupportClient, StandupTelegramBot
@@ -39,6 +40,27 @@ def standup_speech(message):
 def standuper(message):
     bot.reply_to(message, text="Чем занимался вчера? Чем будешь заниматься сегодня? Есть ли какие-нибудь трудности?")
     bot.register_next_step_handler(message, standup_speech)
+
+
+@bot.message_handler(commands=["time_it"])
+@user_checker(bot)
+def time_it(message):
+    time_answer_mapper = {
+        "start": "Вы начали заниматься",
+        "stop": "Вы закончили заниматься"
+    }
+    user_id = str(message.from_user.id)
+    actual_data = get_actual_data()
+    dt = datetime.datetime.now()
+    total_programming_time = actual_data[user_id]["total_programming_time"]
+    event = "start" if not total_programming_time or total_programming_time[-1]["event"] == "stop" else "stop"
+    d = {
+        "dt": str(dt),
+        "event": event
+    }
+    actual_data[user_id]["total_programming_time"].append(d)
+    refresh_actual_data(actual_data)
+    bot.reply_to(message, text=time_answer_mapper[event])
 
 
 @bot.message_handler(commands=["start"])
