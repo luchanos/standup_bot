@@ -12,4 +12,5 @@ with open(FILE_PATH, "r") as f_o:
     for user_id in data_from_json:
         if data_from_json[user_id]["last_updated_dt"] != str(date.today()):
             chat_id = data_from_json[user_id]["chat_id"]
-            requests.get(f"https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}&text=Привет! Как насчёт того, чтобы постендапиться?)")
+            requests.get(f"https://api.telegram.org/bot{TOKEN}/sendMessage?"
+                         f"chat_id={chat_id}&text=Привет! Как насчёт того, чтобы постендапиться?)")
